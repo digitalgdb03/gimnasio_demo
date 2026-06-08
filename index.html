@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zona Gym · Gestión</title>
+  <title>Zona Gym</title>
   <link rel="icon" href="assets/zona_gym.png">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,8 +13,15 @@
   <div class="login-wrap" id="login">
     <div class="login-left">
       <div class="login-card">
-        <h1 class="login-name">ZONA GYM</h1>
-        <p class="login-tagline">Sistema de gestión</p>
+        <div class="login-header">
+          <div class="icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/>
+            </svg>
+          </div>
+          <h1 class="login-name">ZONA GYM</h1>
+          <p class="login-tagline">Sistema de gestión administrativa</p>
+        </div>
         <div class="msg error" id="loginErr" hidden>Usuario o contraseña incorrectos.</div>
         <form id="loginForm" autocomplete="off">
           <label>Usuario</label>
@@ -23,7 +30,7 @@
           <input type="password" id="loginPass" value="zona2026" autocomplete="current-password">
           <button type="submit" class="btn btn-primary">Ingresar</button>
         </form>
-        <p class="login-hint">Acceso: <b>admin</b> / <b>zona2026</b></p>
+        <!-- <p class="login-hint">Acceso: <b>admin</b> / <b>zona2026</b></p> -->
       </div>
     </div>
     <div class="login-right">

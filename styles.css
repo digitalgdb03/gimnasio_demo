@@ -99,7 +99,7 @@ body {
 .rate-chip {
   display: flex; align-items: center; gap: 9px;
   background: var(--azul); color: #fff; padding: 8px 14px; border-radius: 999px;
-  font-size: 13px; font-weight: 600;
+  font-size: 13px; font-weight: 600; flex: 0 0 auto; white-space: nowrap;
 }
 .rate-chip b { color: var(--amarillo); font-family: var(--display); font-size: 18px; letter-spacing: .5px; }
 .rate-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(31,157,87,.25); }
@@ -354,18 +354,15 @@ tbody tr:hover { background: #fafbfd; }
   .topbar h2 { font-size: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .topbar .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .reset-btn { display: none; }
-  .rate-chip { font-size: 11px; padding: 6px 10px; gap: 6px; flex: 0 0 auto; }
-  .rate-chip b { font-size: 14px; }
   .menu-toggle { width: 38px; height: 38px; }
   .avatar { width: 36px; height: 36px; font-size: 13px; }
   .cols-2 { grid-template-columns: 1fr; }
 }
 @media (max-width: 430px) {
+  .topbar { gap: 7px; padding-left: 12px; padding-right: 12px; }
   .topbar .sub { display: none; }
-  .rate-chip { font-size: 0; padding: 8px; gap: 0; }
-  .rate-chip .dot { margin: 0; }
-  .rate-chip b { font-size: 13px; }
-  .rate-chip b::after { content: " Bs"; }
+  .menu-toggle { width: 36px; height: 36px; }
+  .avatar { width: 34px; height: 34px; font-size: 12px; }
 }
 
 /* TABLAS RESPONSIVE: se apilan como tarjetas, sin scroll horizontal */
@@ -519,3 +516,17 @@ tbody tr:hover { background: #fafbfd; }
 .mp-add input { flex: 1 1 130px; min-width: 0; }
 .mp-add .btn { flex: 0 0 auto; }
 @media (max-width: 520px) { .mp-add select, .mp-add input, .mp-add .btn { flex: 1 1 100%; justify-content: center; } }
+
+/* Login: encabezado con ícono circular (personalización) */
+.login-header { text-align: center; margin-bottom: 20px; }
+.login-icon { width: 50px; height: 50px; margin: 0 auto 10px auto; color: var(--naranja); }
+.login-icon svg { width: 100%; height: 100%; }
+.icon-circle {
+  width: 80px; height: 80px;
+  background-color: var(--amarillo);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 15px auto;
+  color: var(--azul);
+}
+.icon-circle svg { width: 50px; height: 50px; }
