@@ -472,6 +472,7 @@ function vHorarios() {
     return `<div class="cal-row"><span class="cal-row-time">${b}</span><div class="cal-row-classes">${cls.map(chipClase).join("")}${cls.length >= 2 ? '<div class="cap-note" style="text-align:left">cupo máx. (2)</div>' : ""}</div></div>`;
   }).join("");
   return `
+  <div class="msg warning" style="margin-bottom:16px">Las áreas de <b>acceso libre</b> (Pesas) están disponibles todo el horario y no se programan aquí. Este calendario es solo para <b>clases dirigidas</b>.</div>
   <div class="toolbar">
     <div class="section-note" style="margin:0">Un instructor dicta <b>1 clase por bloque</b> · máximo <b>2 simultáneas</b>. Toca una clase para editarla.</div>
     <button class="btn btn-primary" data-action="nuevaClase" style="margin-left:auto">+ Nueva clase</button>
@@ -680,7 +681,7 @@ const handlers = {
 };
 
 /* ===================== ROUTER · MENÚ · LOGIN ===================== */
-function applyMenu() { const r = $("#appRoot"); if (!r) return; r.classList.toggle("menu-open", menuOpen); r.classList.toggle("sidebar-hidden", !menuOpen); }
+function applyMenu() { const r = $("#appRoot"); if (!r) return; r.classList.toggle("menu-open", menuOpen); }
 function toggleMenu() { menuOpen = !menuOpen; applyMenu(); }
 
 function go(id) {
