@@ -66,14 +66,14 @@ function seed() {
       { id: "u_leon",  nombre: "Miguel León",   cedula: "V-17.880.402", email: "m.leon@zonagym.com",    telefono: "0424-1110022", rol: "INSTRUCTOR", detalle: "Boxeo" },
       { id: "u_mora",  nombre: "Karla Mora",    cedula: "V-23.110.998", email: "k.mora@zonagym.com",    telefono: "0414-1110033", rol: "INSTRUCTOR", detalle: "Bailoterapia" },
       { id: "u_ortiz", nombre: "Diego Ortiz",   cedula: "V-16.009.771", email: "d.ortiz@zonagym.com",   telefono: "0426-1110044", rol: "INSTRUCTOR", detalle: "MMA" },
-      { id: "u_maria", nombre: "María Gómez",    cedula: "V-25.481.230", email: "maria.g@gmail.com",     telefono: "0414-1234567", rol: "CLIENTE", estado: "activo",    planId: "pp_m", vence: "28/06/2026", salud: "Sin condiciones", emergencia: "Pedro Gómez · 0414-9990001" },
-      { id: "u_jose",  nombre: "José Rodríguez", cedula: "V-19.330.118", email: "jose.r@gmail.com",      telefono: "0412-7654321", rol: "CLIENTE", estado: "activo",    planId: "pm_m", vence: "12/06/2026", salud: "Lesión de rodilla (2024)", emergencia: "Ana R. · 0412-8880002" },
-      { id: "u_andre", nombre: "Andrea Pérez",   cedula: "V-27.901.554", email: "andrea.p@gmail.com",    telefono: "0424-9081726", rol: "CLIENTE", estado: "congelado", planId: "pl_s", vence: "05/07/2026", salud: "", emergencia: "" },
-      { id: "u_luis",  nombre: "Luis Hernández", cedula: "V-14.220.873", email: "luis.h@gmail.com",      telefono: "0416-3344556", rol: "CLIENTE", estado: "moroso",    planId: "pb_m", vence: "30/05/2026", salud: "Hipertensión", emergencia: "Marta H. · 0416-7770003" },
-      { id: "u_valen", nombre: "Valentina Díaz", cedula: "V-28.114.690", email: "valen.d@gmail.com",     telefono: "0414-5566778", rol: "CLIENTE", estado: "activo",    planId: "pp_m", vence: "22/06/2026", salud: "", emergencia: "" },
-      { id: "u_carlo", nombre: "Carlos Mendoza", cedula: "V-16.778.401", email: "carlos.m@gmail.com",    telefono: "0412-1122334", rol: "CLIENTE", estado: "activo",    planId: "pp_d", vence: "07/06/2026", salud: "Asma leve", emergencia: "Rosa M. · 0412-6660004" },
-      { id: "u_danie", nombre: "Daniela Suárez", cedula: "V-26.550.992", email: "dani.s@gmail.com",      telefono: "0424-8877665", rol: "CLIENTE", estado: "moroso",    planId: "pm_s", vence: "01/06/2026", salud: "", emergencia: "" },
-      { id: "u_ricar", nombre: "Ricardo Blanco", cedula: "V-12.009.345", email: "ricardo.b@gmail.com",   telefono: "0426-4455667", rol: "CLIENTE", estado: "activo",    planId: "pb_m", vence: "19/06/2026", salud: "Sin condiciones", emergencia: "Sofía B. · 0426-5550005" },
+      { id: "u_maria", nombre: "María Gómez",    cedula: "V-25.481.230", email: "maria.g@gmail.com",     telefono: "0414-1234567", rol: "CLIENTE", estado: "activo",    salud: "Sin condiciones", emergencia: "Pedro Gómez · 0414-9990001", membresias: [{ id: "m1", planId: "pp_m", vence: "28/06/2026" }, { id: "m2", planId: "pb_m", vence: "28/06/2026" }] },
+      { id: "u_jose",  nombre: "José Rodríguez", cedula: "V-19.330.118", email: "jose.r@gmail.com",      telefono: "0412-7654321", rol: "CLIENTE", estado: "activo",    salud: "Lesión de rodilla (2024)", emergencia: "Ana R. · 0412-8880002", membresias: [{ id: "m3", planId: "pm_m", vence: "12/06/2026" }] },
+      { id: "u_andre", nombre: "Andrea Pérez",   cedula: "V-27.901.554", email: "andrea.p@gmail.com",    telefono: "0424-9081726", rol: "CLIENTE", estado: "congelado", salud: "", emergencia: "", membresias: [{ id: "m4", planId: "pl_s", vence: "05/07/2026" }] },
+      { id: "u_luis",  nombre: "Luis Hernández", cedula: "V-14.220.873", email: "luis.h@gmail.com",      telefono: "0416-3344556", rol: "CLIENTE", estado: "moroso",    salud: "Hipertensión", emergencia: "Marta H. · 0416-7770003", membresias: [{ id: "m5", planId: "pb_m", vence: "30/05/2026" }] },
+      { id: "u_valen", nombre: "Valentina Díaz", cedula: "V-28.114.690", email: "valen.d@gmail.com",     telefono: "0414-5566778", rol: "CLIENTE", estado: "activo",    salud: "", emergencia: "", membresias: [{ id: "m6", planId: "pp_m", vence: "22/06/2026" }, { id: "m7", planId: "pl_m", vence: "22/06/2026" }] },
+      { id: "u_carlo", nombre: "Carlos Mendoza", cedula: "V-16.778.401", email: "carlos.m@gmail.com",    telefono: "0412-1122334", rol: "CLIENTE", estado: "activo",    salud: "Asma leve", emergencia: "Rosa M. · 0412-6660004", membresias: [{ id: "m8", planId: "pp_d", vence: "07/06/2026" }] },
+      { id: "u_danie", nombre: "Daniela Suárez", cedula: "V-26.550.992", email: "dani.s@gmail.com",      telefono: "0424-8877665", rol: "CLIENTE", estado: "moroso",    salud: "", emergencia: "", membresias: [{ id: "m9", planId: "pm_s", vence: "01/06/2026" }] },
+      { id: "u_ricar", nombre: "Ricardo Blanco", cedula: "V-12.009.345", email: "ricardo.b@gmail.com",   telefono: "0426-4455667", rol: "CLIENTE", estado: "activo",    salud: "Sin condiciones", emergencia: "Sofía B. · 0426-5550005", membresias: [{ id: "m10", planId: "pb_m", vence: "19/06/2026" }] },
     ],
 
     clases: [
@@ -104,12 +104,12 @@ function seed() {
     ],
 
     asistencias: [
-      { id: "a1", clienteId: "u_jose",  entrada: "6:05 AM" },
-      { id: "a2", clienteId: "u_maria", entrada: "7:05 AM" },
-      { id: "a3", clienteId: "u_ricar", entrada: "8:15 AM" },
-      { id: "a4", clienteId: "u_carlo", entrada: "9:10 AM" },
-      { id: "a5", clienteId: "u_valen", entrada: "10:40 AM" },
-      { id: "a6", clienteId: "u_danie", entrada: "11:05 AM" },
+      { id: "a1", clienteId: "u_jose",  entrada: "6:05 AM",  salida: "7:20 AM" },
+      { id: "a2", clienteId: "u_maria", entrada: "7:05 AM",  salida: "8:30 AM" },
+      { id: "a3", clienteId: "u_ricar", entrada: "8:15 AM",  salida: "9:50 AM" },
+      { id: "a4", clienteId: "u_carlo", entrada: "9:10 AM",  salida: null },
+      { id: "a5", clienteId: "u_valen", entrada: "10:40 AM", salida: null },
+      { id: "a6", clienteId: "u_danie", entrada: "11:05 AM", salida: null },
     ],
 
     asistencia: [

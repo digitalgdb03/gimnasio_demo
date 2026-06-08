@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zona Gym</title>
+  <title>Zona Gym · Gestión</title>
   <link rel="icon" href="assets/zona_gym.png">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -23,7 +23,7 @@
           <input type="password" id="loginPass" value="zona2026" autocomplete="current-password">
           <button type="submit" class="btn btn-primary">Ingresar</button>
         </form>
-        <!-- <p class="login-hint">Acceso: <b>admin</b> / <b>zona2026</b></p> -->
+        <p class="login-hint">Acceso: <b>admin</b> / <b>zona2026</b></p>
       </div>
     </div>
     <div class="login-right">
@@ -33,6 +33,7 @@
 
   <!-- APP -->
   <div class="app" id="appRoot" hidden>
+    <div class="backdrop" id="backdrop"></div>
     <aside class="sidebar">
       <div class="brand">
         <img src="assets/zona_gym.png" alt="" class="brand-logo">
@@ -48,13 +49,23 @@
 
     <main class="main">
       <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Mostrar u ocultar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
         <div class="title">
           <h2 id="pageTitle">Dashboard</h2>
           <div class="sub" id="pageSub"></div>
         </div>
         <div class="rate-chip"><span class="dot"></span> Tasa BCV <b id="bcv"></b> Bs/USD</div>
         <button class="reset-btn" id="resetBtn" title="Volver a los datos iniciales">↺ Restablecer</button>
-        <div class="avatar">AD</div>
+        <div class="user-menu">
+          <button class="avatar" id="avatarBtn" title="Cuenta">AD</button>
+          <div class="user-dropdown" id="userMenu" hidden>
+            <button data-act="perfil">Mi perfil</button>
+            <button data-act="config">Configuración</button>
+            <button data-act="logout">Cerrar sesión</button>
+          </div>
+        </div>
       </header>
       <section class="content" id="view"></section>
     </main>
