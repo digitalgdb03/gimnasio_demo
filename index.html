@@ -3,29 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Iron House · Administración de Gimnasio (Demo)</title>
-  <meta name="description" content="Demo del sistema de administración de gimnasio.">
+  <title>Zona Gym · Gestión</title>
+  <link rel="icon" href="assets/zona_gym.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="app">
+
+  <!-- LOGIN -->
+  <div class="login-wrap" id="login">
+    <div class="login-left">
+      <div class="login-card">
+        <h1 class="login-name">ZONA GYM</h1>
+        <p class="login-tagline">Sistema de gestión</p>
+        <div class="msg error" id="loginErr" hidden>Usuario o contraseña incorrectos.</div>
+        <form id="loginForm" autocomplete="off">
+          <label>Usuario</label>
+          <input type="text" id="loginUser" value="admin" autocomplete="username">
+          <label>Contraseña</label>
+          <input type="password" id="loginPass" value="zona2026" autocomplete="current-password">
+          <button type="submit" class="btn btn-primary">Ingresar</button>
+        </form>
+        <p class="login-hint">Acceso: <b>admin</b> / <b>zona2026</b></p>
+      </div>
+    </div>
+    <div class="login-right">
+      <img src="assets/zona_gym.png" alt="Zona Gym" class="login-logo-big">
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app" id="appRoot" hidden>
     <aside class="sidebar">
       <div class="brand">
-        <div class="mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/>
-          </svg>
-        </div>
-        <div>
-          <h1>Iron House</h1>
-          <small>Gym Manager</small>
-        </div>
+        <img src="assets/zona_gym.png" alt="" class="brand-logo">
+        <div><h1>Zona Gym</h1><small>Gestión</small></div>
       </div>
       <div class="nav-label">Principal</div>
       <nav class="nav" id="nav"></nav>
       <div class="footer">
-        Demo estática · v1.0<br>
-        Sistema en LAN · Django + PostgreSQL
+        <div id="footUser">Zona Gym · Panel</div>
+        <button class="reset-btn" id="logoutBtn" style="margin-top:10px">Cerrar sesión</button>
       </div>
     </aside>
 
@@ -35,16 +52,13 @@
           <h2 id="pageTitle">Dashboard</h2>
           <div class="sub" id="pageSub"></div>
         </div>
-        <div class="rate-chip">
-          <span class="dot"></span> Tasa BCV <b id="bcv"></b> Bs/USD
-        </div>
-        <button class="reset-btn" id="resetBtn" title="Volver a los datos de ejemplo">↺ Restablecer</button>
+        <div class="rate-chip"><span class="dot"></span> Tasa BCV <b id="bcv"></b> Bs/USD</div>
+        <button class="reset-btn" id="resetBtn" title="Volver a los datos iniciales">↺ Restablecer</button>
         <div class="avatar">AD</div>
       </header>
       <section class="content" id="view"></section>
     </main>
   </div>
-  <div class="demo-flag">● DEMO · datos de ejemplo</div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>

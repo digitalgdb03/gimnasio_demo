@@ -1,42 +1,42 @@
-# Demo · Iron House Gym Manager
+# Zona Gym · Sistema de gestión (web)
 
-Prototipo visual **estático** del sistema de administración de gimnasio.
-Datos quemados (de ejemplo), sin backend. Sirve para mostrarle la interfaz
-al cliente desde cualquier navegador o teléfono.
+Aplicación web del gimnasio: usuarios, clientes, asistencia (acceso libre),
+servicios, planes, horarios de clases dirigidas, pagos y reportes.
+Interfaz responsive (escritorio y móvil). Acceso con credenciales.
 
-> El sistema **productivo** (Django + PostgreSQL) corre en la LAN del gimnasio.
-> Esta demo NO se conecta a ninguna base de datos; solo refleja el diseño.
+## Acceso
+- Usuario: **admin**
+- Contraseña: **zona2026**
+
+(Se cambian en `app.js`, constante `CREDS`.)
 
 ## Contenido
 ```
-gimnasio_demo_vercel/
-├── index.html      ← shell de la app
-├── styles.css      ← sistema de diseño (paleta de marca)
-├── app.js          ← navegación y render de vistas
-├── data.js         ← datos estáticos de demostración
-└── vercel.json     ← config (opcional para un sitio estático)
+zona_gym_web/
+├── index.html      ← login + shell de la app
+├── styles.css      ← sistema de diseño (paleta de marca) + responsive
+├── app.js          ← lógica, módulos y validaciones
+├── data.js         ← datos iniciales (clientes, planes, pagos, horario)
+├── assets/
+│   └── zona_gym.png ← logo
+└── vercel.json
 ```
 
-## Subir a Vercel (3 opciones)
-
-**A) Arrastrar y soltar (más fácil)**
+## Publicar en Vercel
 1. Entra a https://vercel.com → *Add New… → Project*.
-2. Arrastra la carpeta `gimnasio_demo_vercel` a la zona de subida.
-3. *Deploy*. Vercel detecta un sitio estático automáticamente.
+2. Arrastra la carpeta `zona_gym_web` (o impórtala desde GitHub).
+3. *Deploy*. Vercel la detecta como sitio estático; no requiere build.
 
-**B) Desde GitHub**
-1. Sube esta carpeta a un repositorio.
-2. En Vercel: *Import Project* → selecciona el repo → *Deploy*.
-   No hace falta "Build Command"; *Output Directory* = raíz.
-
-**C) Con la CLI**
+Con la CLI:
 ```bash
 npm i -g vercel
-cd gimnasio_demo_vercel
-vercel        # despliegue de prueba
-vercel --prod # despliegue final
+cd zona_gym_web
+vercel --prod
 ```
 
-## Editar la demo
-Toda la información de ejemplo está en `data.js` (clientes, planes, pagos,
-horario, tasa BCV). Cambia esos valores y se reflejan al recargar.
+## Notas
+- Los datos se guardan en el navegador del equipo (localStorage). El botón
+  **↺ Restablecer** vuelve a los datos iniciales; **Cerrar sesión** sale.
+- Para un sistema multi-PC con datos centralizados y reales, el backend
+  Django + PostgreSQL (en la LAN del gimnasio) sigue siendo la base; esta
+  web comparte exactamente el mismo diseño e interfaz.
