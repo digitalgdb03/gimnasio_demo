@@ -46,6 +46,14 @@ const instructores = () => state.usuarios.filter((u) => u.rol === "INSTRUCTOR");
 const planNombre = (p) => p ? (p.nombre || (servicio(p.areaId)?.nombre || "?")) : "—";
 const planLabel = (id) => { const p = planById(id); if (!p) return "—"; return p.nombre ? p.nombre : `${servicio(p.areaId)?.nombre || "?"} · ${p.duracion}`; };
 const planOpts = () => state.planes.map((p) => ({ value: p.id, label: planLabel(p.id) + " · BCV $" + p.usdBcv + " / Div $" + p.usdDivisas }));
+const entrenadoresSummary = (c) => {
+  if (!c || !c.membresias) return '<span style="color:var(--muted)">—</span>';
+  const ents = c.membresias
+    .filter(m => m.entrenadorId)
+    .map(m => usuario(m.entrenadorId)?.nombre.split(" ")[0])
+    .filter(Boolean);
+  return ents.length ? [...new Set(ents)].join(", ") : '<span style="color:var(--muted)">—</span>';
+};
 
 /* ---------- Fechas (formato dd/mm/aaaa) ---------- */
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -244,12 +252,26 @@ function vDashboard() {
   const horaTop = (top(cntBy(state.clases, "bloque")) || [])[0] || "—";
   const enGym = state.asistencias.filter((a) => !a.salida).length;
   return `
-  <div class="grid cols-4" data-stagger>
-    ${stat("Ingresos de hoy", "$" + ingresos.toFixed(0), "Bs " + bs(ingresos), "pagos", "tint-y")}
-    ${stat("En el gimnasio ahora", enGym, "clientes presentes", "asistencia", "tint-o")}
-    ${stat("Clientes activos", activos, "de " + cli.length + " totales", "clientes", "tint-b")}
-    ${stat("Morosos", morosos, "requieren seguimiento", "planes", "tint-c")}
+ <div style="display: flex; gap: 20px; align-items: stretch; flex-wrap: wrap;">
+    
+    <div class="grid cols-2 dashboard-stats" data-stagger style="flex: 1; margin: 0; display: grid; grid-template-rows: 1fr 1fr; gap: 20px;">
+      ${stat("Ingresos de hoy", "$" + ingresos.toFixed(0), "Bs " + bs(ingresos), "pagos", "tint-y")}
+      ${stat("En el gimnasio ahora", enGym, "clientes presentes", "asistencia", "tint-o")}
+      ${stat("Clientes activos", activos, "de " + cli.length + " totales", "clientes", "tint-b")}
+      ${stat("Morosos", morosos, "requieren seguimiento", "planes", "tint-c")}
+    </div>
+
+    <div class="tasa-bcv-card fade-in" style="flex: 0 0 320px; margin: 0; display: flex; align-items: center; justify-content: center; text-align: center; border-radius: 12px; min-height: 100%;">
+      <div class="tasa-bcv-card-content" style="width: 100%;">
+        <h3 style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.9;">Tasa del Día</h3>
+        <div class="val" style="font-size: 3.5rem; font-weight: 800; line-height: 1;">
+          ${Number(state.bcv).toFixed(2)} <span style="font-size: 1.5rem; color: #F2B90C;">Bs</span>
+        </div>
+      </div>
+    </div>
+
   </div>
+
   <div class="grid cols-2" style="margin-top:20px">
     <div class="card fade-in"><h3>Asistencia por hora</h3>
       <div class="bars">${state.asistencia.map((a) => `<div class="bar ${a.h === "6p" ? "peak" : ""}"><div class="val">${a.v}</div><div class="col" style="height:${a.v / maxA * 100}%"></div><div class="lbl">${a.h}</div></div>`).join("")}</div>
@@ -321,15 +343,16 @@ function vClientes() {
     <button class="btn btn-primary" data-action="nuevoCliente">+ Nuevo cliente</button>
   </div>
   <div class="card fade-in"><div class="table-wrap"><table>
-    <thead><tr><th>Cliente</th><th>Planes</th><th>Estado</th><th>Teléfono</th><th></th></tr></thead>
+    <thead><tr><th>Cliente</th><th>Planes</th><th>Entrenador</th><th>Estado</th><th>Teléfono</th><th></th></tr></thead>
     <tbody>${lista.map((c, i) => `
       <tr>
         <td data-label="Cliente"><div class="cell-name"><div class="av ${avClass(i)}">${initials(c.nombre)}</div><div><b>${c.nombre}</b><span>${c.cedula || ""}</span></div></div></td>
         <td data-label="Planes">${planSummary(c)}</td>
+        <td data-label="Entrenador">${entrenadoresSummary(c)}</td>
         <td data-label="Estado"><span class="badge ${c.estado}">${cap(c.estado || "activo")}</span></td>
         <td data-label="Teléfono">${c.telefono || "—"}</td>
         <td data-label="">${actBtnsCli(c)}</td>
-      </tr>`).join("") || `<tr><td style="text-align:center;color:var(--muted)">Sin clientes.</td></tr>`}
+      </tr>`).join("") || `<tr><td style="text-align:center;color:var(--muted)" colspan="6">Sin clientes.</td></tr>`}
     </tbody></table></div></div>`;
 }
 function formCliente(isNew = false) {
@@ -490,18 +513,19 @@ function vAsistencia() {
     ${stat("Clientes distintos", distintos, "personas hoy", "dashboard", "tint-c")}
   </div>
   <div class="card fade-in"><h3>Asistencia de hoy</h3><div class="table-wrap"><table>
-    <thead><tr><th>Cliente</th><th>Cédula</th><th>Entrada</th><th>Salida</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr><th>Cliente</th><th>Cédula</th><th>Entrenador</th><th>Entrada</th><th>Salida</th><th>Estado</th><th></th></tr></thead>
     <tbody>${hoy.slice().reverse().map((a, i) => {
       const c = usuario(a.clienteId), dentro = !a.salida;
       return `<tr>
         <td data-label="Cliente"><div class="cell-name"><div class="av ${avClass(i)}">${initials(c?.nombre)}</div><b>${c?.nombre || "—"}</b></div></td>
         <td data-label="Cédula">${c?.cedula || "—"}</td>
+        <td data-label="Entrenador">${entrenadoresSummary(c)}</td>
         <td data-label="Entrada">${a.entrada}</td>
         <td data-label="Salida">${a.salida || "—"}</td>
         <td data-label="Estado">${dentro ? '<span class="badge activo">En el gimnasio</span>' : '<span class="badge congelado">Se retiró</span>'}</td>
         <td data-label=""><div class="row-actions">${dentro ? `<button class="btn btn-ghost" style="padding:6px 12px" data-action="registrarSalida" data-id="${a.id}">Salida</button>` : ""}<button class="icon-btn del" data-action="eliminarAsistencia" data-id="${a.id}">${ICO("del")}</button></div></td>
       </tr>`;
-    }).join("") || `<tr><td style="text-align:center;color:var(--muted)">Sin registros hoy.</td></tr>`}
+    }).join("") || `<tr><td style="text-align:center;color:var(--muted)" colspan="7">Sin registros hoy.</td></tr>`}
     </tbody></table></div></div>`;
 }
 
@@ -855,6 +879,16 @@ function go(id) {
   $("#pageSub").textContent = meta.sub();
   $("#view").innerHTML = VIEWS[id]();
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.id === id));
+  
+  const bcvTextElement = $("#bcv");
+  if (bcvTextElement) {
+    let topBcvWidget = bcvTextElement.parentElement;
+    if (topBcvWidget.tagName === "B" || topBcvWidget.tagName === "SPAN") {
+      topBcvWidget = topBcvWidget.parentElement; 
+    }
+    topBcvWidget.style.display = (id === "dashboard") ? "none" : "";
+  }
+
   if (window.innerWidth <= 1080) { menuOpen = false; applyMenu(); }
   window.scrollTo({ top: 0, behavior: "smooth" });
 }

@@ -608,3 +608,79 @@ tbody tr:hover { background: #fafbfd; }
 .freeze-grid span { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .freeze-grid b { font-size: 15px; color: var(--ink); }
 @media (max-width: 640px) { .freeze-grid { grid-template-columns: 1fr 1fr; } }
+
+
+/* ==========================================================================
+   Tarjeta de Tasa del Día (Dashboard)
+   ========================================================================== */
+.tasa-bcv-card {
+  background: linear-gradient(135deg, var(--azul-900) 0%, #1a1c2b 100%);
+  border-radius: var(--r);
+  padding: 24px 32px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Mantiene el texto a la derecha */
+  border: 1px solid var(--azul-700);
+  max-width: 380px; /* Evita que ocupe todo el ancho de la pantalla */
+  margin-bottom: 24px;
+}
+
+.tasa-bcv-card::before {
+  content: '';
+  position: absolute;
+  top: -30px;
+  left: -30px;
+  bottom: -30px;
+  width: 65%;
+  background-image: url('assets/logoBCV.png');
+  background-size: contain;
+  background-position: center left;
+  background-repeat: no-repeat;
+  opacity: 0.08; /* Efecto de marca de agua sutil */
+  z-index: 1;
+  filter: grayscale(100%);
+}
+
+.tasa-bcv-card-content {
+  position: relative;
+  z-index: 2;
+  text-align: right;
+}
+
+.tasa-bcv-card-content h3 {
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.tasa-bcv-card-content .val {
+  font-family: var(--display);
+  font-size: 52px;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.tasa-bcv-card-content .val small {
+  font-family: var(--body);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--amarillo); /* Toque del amarillo de la paleta */
+  margin-left: 6px;
+}
+
+.dashboard-stats .stat {
+  height: 100% !important;
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+}
