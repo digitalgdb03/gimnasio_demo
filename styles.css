@@ -530,3 +530,81 @@ tbody tr:hover { background: #fafbfd; }
   color: var(--azul);
 }
 .icon-circle svg { width: 50px; height: 50px; }
+
+/* ============================================================
+   MODIFICACIONES: tasa con fondo, doble precio, clases
+   fija/personalizada, calendario con logo, congelación
+   ============================================================ */
+
+/* Tasa BCV destacada con fondo (Banco de Venezuela) */
+.rate-box {
+  position: relative; flex: 0 0 auto; min-width: 178px;
+  border-radius: 14px; overflow: hidden; color: #fff;
+  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-700) 100%);
+  box-shadow: 0 10px 24px -14px rgba(52,57,89,.7); border: 1px solid rgba(255,255,255,.08);
+}
+.rate-box .rate-bg {
+  position: absolute; inset: 0; background-image: url('assets/bdv.png');
+  background-repeat: no-repeat; background-position: right center; background-size: cover;
+  opacity: .22;
+}
+.rate-box .rate-inner { position: relative; z-index: 1; padding: 9px 16px; display: flex; flex-direction: column; gap: 1px; }
+.rate-box .rate-label { font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #cdd3ec; display: inline-flex; align-items: center; gap: 7px; }
+.rate-box .rate-label .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(31,157,87,.3); }
+.rate-box .rate-val { display: flex; align-items: baseline; gap: 6px; }
+.rate-box .rate-val b { color: var(--amarillo); font-family: var(--display); font-size: 28px; letter-spacing: .5px; line-height: 1; }
+.rate-box .rate-val small { font-size: 11px; color: #b9bfd9; font-weight: 600; }
+@media (max-width: 760px) { .rate-box { min-width: 0; } .rate-box .rate-val b { font-size: 22px; } .rate-box .rate-inner { padding: 7px 12px; } }
+@media (max-width: 430px) { .rate-box .rate-label span:not(.dot) { display: none; } }
+
+/* Segundo precio (divisas) en tarjetas de plan */
+.price-tag { font-family: var(--body); font-size: 11px; font-weight: 700; color: #fff; background: var(--azul); padding: 2px 7px; border-radius: 999px; vertical-align: middle; margin-left: 8px; letter-spacing: .5px; }
+.price2 { margin-top: 6px; font-size: 14px; color: var(--gris); }
+.price2 b { color: var(--ok); font-weight: 800; }
+.price2 span { font-size: 12px; color: var(--muted); }
+
+/* Etiqueta de moneda en pagos */
+.mon-tag { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .3px; }
+.mon-tag.bcv { background: rgba(52,57,89,.1); color: var(--azul); }
+.mon-tag.div { background: rgba(31,157,87,.14); color: var(--ok); }
+
+/* Campos: checkbox, estático, ayuda */
+.field-check .check { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--gris); }
+.field-check .check input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--amarillo); cursor: pointer; }
+.field-static .static-box { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; font-size: 13.5px; color: var(--ink); line-height: 1.5; }
+.field-static .static-box b { color: var(--azul); }
+.field-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+/* Gestor de planes: botones por fila */
+.mp-row .icon-btn { width: 30px; height: 30px; flex: 0 0 auto; }
+.mp-row .mp-info { margin-right: auto; }
+
+/* Clase personalizada: estilo diferenciado */
+.klass-pers { background: repeating-linear-gradient(45deg, rgba(255,255,255,.13) 0 7px, transparent 7px 14px), var(--ocre) !important; box-shadow: inset 0 0 0 2px rgba(255,255,255,.45); }
+.klass-pers b em { font-style: normal; font-size: 9.5px; font-weight: 800; background: rgba(255,255,255,.25); padding: 1px 5px; border-radius: 6px; }
+
+/* Leyenda del calendario */
+.cal-legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); font-weight: 600; align-items: center; }
+.cal-legend i { display: inline-block; width: 13px; height: 13px; border-radius: 4px; vertical-align: -2px; margin-right: 5px; }
+.cal-legend .lg-fija { background: var(--naranja); }
+.cal-legend .lg-pers { background: repeating-linear-gradient(45deg, rgba(255,255,255,.5) 0 4px, transparent 4px 8px), var(--ocre); box-shadow: inset 0 0 0 1px var(--ocre); }
+@media (max-width: 760px) { .cal-legend { width: 100%; order: 3; } }
+
+/* Calendario con logo de boxeo de fondo (marca de agua) */
+.cal { position: relative; }
+.cal::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url('assets/cal_watermark.png');
+  background-repeat: no-repeat; background-position: center; background-size: min(420px, 60%);
+  opacity: .05;
+}
+.cal .cal-desktop, .cal .cal-mobile { position: relative; z-index: 1; }
+
+/* Banner de congelación en el perfil */
+.freeze-banner { border-left: 4px solid var(--info); }
+.freeze-banner h3 { color: var(--info); }
+.freeze-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.freeze-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.freeze-grid span { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.freeze-grid b { font-size: 15px; color: var(--ink); }
+@media (max-width: 640px) { .freeze-grid { grid-template-columns: 1fr 1fr; } }

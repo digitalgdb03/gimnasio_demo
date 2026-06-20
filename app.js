@@ -1,13 +1,14 @@
 /* Zona Gym · Aplicación de gestión (vanilla JS). Estado persistido en el navegador. */
 
 const $ = (s, c = document) => c.querySelector(s);
-const STORE = "zona_gym_v1";
+const STORE = "zona_gym_v2";
 const AUTH = "zona_gym_auth";
 const CREDS = { user: "admin", pass: "zona2026" };
 
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const DIA_CORTO = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"];
-const BLOQUES = ["6:00", "8:00", "10:00", "5:00 PM", "6:00 PM", "8:00 PM"];
+const BLOQUES = ["8:40-10:30 am", "9:00-11:00 am", "2:40-3:50 pm", "6:00-7:00 pm", "7:00-8:00 pm", "8:00-9:00 pm", "9:00-10:00 pm"];
+const TIPOS_CLASE = [{ value: "fija", label: "Fija" }, { value: "personalizada", label: "Personalizada" }];
 const ROLES = [{ value: "CLIENTE", label: "Cliente" }, { value: "INSTRUCTOR", label: "Instructor" }, { value: "EMPLEADO", label: "Empleado" }];
 const ESTADOS = [{ value: "activo", label: "Activo" }, { value: "congelado", label: "Congelado" }, { value: "moroso", label: "Moroso" }];
 const METODOS = ["Efectivo (USD)", "Efectivo (Bs)", "Pago Móvil", "Transferencia", "Punto de venta"];
@@ -42,8 +43,27 @@ const planById = (id) => state.planes.find((p) => p.id === id);
 const usuario = (id) => state.usuarios.find((u) => u.id === id);
 const clientes = () => state.usuarios.filter((u) => u.rol === "CLIENTE");
 const instructores = () => state.usuarios.filter((u) => u.rol === "INSTRUCTOR");
-const planLabel = (id) => { const p = planById(id); return p ? `${servicio(p.areaId)?.nombre || "?"} · ${p.duracion}` : "—"; };
-const planOpts = () => state.planes.map((p) => ({ value: p.id, label: planLabel(p.id) + " ($" + p.usd + ")" }));
+const planNombre = (p) => p ? (p.nombre || (servicio(p.areaId)?.nombre || "?")) : "—";
+const planLabel = (id) => { const p = planById(id); if (!p) return "—"; return p.nombre ? p.nombre : `${servicio(p.areaId)?.nombre || "?"} · ${p.duracion}`; };
+const planOpts = () => state.planes.map((p) => ({ value: p.id, label: planLabel(p.id) + " · BCV $" + p.usdBcv + " / Div $" + p.usdDivisas }));
+
+/* ---------- Fechas (formato dd/mm/aaaa) ---------- */
+const pad2 = (n) => String(n).padStart(2, "0");
+function fmtDMY(d) { return pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear(); }
+function parseDMY(s) { if (!s) return null; const m = String(s).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/); if (!m) return null; const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])); return isNaN(d.getTime()) ? null : d; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function addMonths(d, n) { const x = new Date(d), day = x.getDate(); x.setMonth(x.getMonth() + n); if (x.getDate() < day) x.setDate(0); return x; }
+function daysInMonth(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(); }
+function diffDays(later, earlier) { const a = new Date(later); a.setHours(0, 0, 0, 0); const b = new Date(earlier); b.setHours(0, 0, 0, 0); return Math.round((a - b) / 86400000); }
+function venceDeInicio(plan, inicioDate) { if (!plan) return inicioDate; if (plan.duracion === "Diaria") return addDays(inicioDate, 1); if (plan.duracion === "Semanal") return addDays(inicioDate, 7); return addMonths(inicioDate, 1); }
+
+/* ---------- Precios (doble: BCV / Divisas) ---------- */
+const monedaDeMetodo = (m) => (m === "Efectivo (USD)" ? "Divisas" : "BCV");
+function precioPlan(plan, moneda) { if (!plan) return 0; if (moneda === "Divisas") return plan.usdDivisas != null ? plan.usdDivisas : plan.usd; return plan.usdBcv != null ? plan.usdBcv : plan.usd; }
+
+/* ---------- Entrenadores ---------- */
+function needsTrainer(plan) { const inc = plan && plan.incluye ? plan.incluye : (plan ? [plan.areaId] : []); return inc.some((a) => a === "s_boxeo" || a === "s_mma"); }
+function instructoresDe(areaIds) { const set = Array.isArray(areaIds) ? areaIds : [areaIds]; const list = instructores().filter((u) => set.includes(u.disciplinaId)); return list.length ? list : instructores(); }
 const membs = (c) => (c && c.membresias) ? c.membresias : [];
 function planSummary(c) {
   const ms = membs(c);
@@ -75,15 +95,20 @@ const ICONS = {
   eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   del: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',
+  snow: '<path d="M12 2v20M2 12h20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M12 6l-3 2 3 2 3-2zM12 18l-3-2 3-2 3 2z"/>',
+  play: '<path d="M6 4l14 8-14 8z"/>',
 };
 const ICO = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[k]}</svg>`;
 const actBtns = (e, d, id) => `<div class="row-actions">
   <button class="icon-btn" title="Editar" data-action="${e}" data-id="${id}">${ICO("edit")}</button>
   <button class="icon-btn del" title="Eliminar" data-action="${d}" data-id="${id}">${ICO("del")}</button></div>`;
-const actBtnsCli = (id) => `<div class="row-actions">
-  <button class="icon-btn" title="Ver perfil" data-action="verPerfil" data-id="${id}">${ICO("eye")}</button>
-  <button class="icon-btn" title="Editar" data-action="editarCliente" data-id="${id}">${ICO("edit")}</button>
-  <button class="icon-btn del" title="Eliminar" data-action="eliminarUsuario" data-id="${id}">${ICO("del")}</button></div>`;
+const actBtnsCli = (c) => `<div class="row-actions">
+  <button class="icon-btn" title="Ver perfil" data-action="verPerfil" data-id="${c.id}">${ICO("eye")}</button>
+  ${c.estado === "congelado"
+    ? `<button class="icon-btn" title="Descongelar" data-action="descongelarCliente" data-id="${c.id}">${ICO("play")}</button>`
+    : `<button class="icon-btn" title="Congelar" data-action="congelarCliente" data-id="${c.id}">${ICO("snow")}</button>`}
+  <button class="icon-btn" title="Editar" data-action="editarCliente" data-id="${c.id}">${ICO("edit")}</button>
+  <button class="icon-btn del" title="Eliminar" data-action="eliminarUsuario" data-id="${c.id}">${ICO("del")}</button></div>`;
 
 const PAGES = [
   { id: "dashboard", label: "Dashboard", sub: () => "Resumen del día · " + state.fecha },
@@ -116,22 +141,27 @@ function fieldHTML(f, val) {
     const list = Array.isArray(val) ? val : [];
     const rows = list.map((m) => {
       const pl = planById(m.planId), s = pl ? servicio(pl.areaId) : null;
+      const ent = m.entrenadorId ? usuario(m.entrenadorId) : null;
+      const extra = [m.inicio ? "inicia " + m.inicio : "", m.vence ? "vence " + m.vence : "", m.personalizado ? "personalizado" : "", ent ? "Entr.: " + ent.nombre : ""].filter(Boolean).join(" · ");
       return `<div class="mp-row">
         <span class="serv-color" style="background:${s?.color || "#404040"}"></span>
-        <div class="mp-info"><b>${s?.nombre || "—"}</b><span>${pl ? pl.duracion + " · $" + pl.usd : ""}${m.vence ? " · vence " + m.vence : ""}</span></div>
+        <div class="mp-info"><b>${planNombre(pl)}</b><span>${pl ? (pl.duracion + (extra ? " · " + extra : "")) : extra}</span></div>
+        <button type="button" class="icon-btn" title="Editar" data-mp-edit="${m.id}">${ICO("edit")}</button>
         <button type="button" class="icon-btn del" title="Quitar" data-mp-del="${m.id}">${ICO("del")}</button>
       </div>`;
-    }).join("") || `<div class="section-note" style="margin:0 0 10px">Sin planes aún. Agrega uno o varios abajo (puede tener varios servicios).</div>`;
+    }).join("") || `<div class="section-note" style="margin:0 0 10px">Sin planes aún. Agrega uno o varios (puede incluir varios servicios).</div>`;
     return `<div class="field" data-mp-root="${f.key}"><label>${f.label}</label>
       <div class="mp-list">${rows}</div>
-      <div class="mp-add">
-        <select data-mp-plan><option value="">Servicio / plan…</option>${state.planes.map((p) => `<option value="${p.id}">${planLabel(p.id)} ($${p.usd})</option>`).join("")}</select>
-        <input data-mp-vence placeholder="Vence (dd/mm/aaaa)">
-        <button type="button" class="btn btn-ghost" data-mp-add>+ Agregar plan</button>
-      </div></div>`;
+      <button type="button" class="btn btn-ghost" data-mp-add>+ Agregar plan / servicio</button></div>`;
+  }
+  if (f.type === "checkbox") {
+    return `<div class="field field-check"><label class="check"><input type="checkbox" name="${f.key}" ${val ? "checked" : ""}><span>${f.label}</span></label></div>`;
+  }
+  if (f.type === "static") {
+    return `<div class="field field-static">${f.label ? `<label>${f.label}</label>` : ""}<div class="static-box">${f.value != null ? f.value : (val || "—")}</div></div>`;
   }
   return `<div class="field"><label>${f.label}${f.required ? " *" : ""}</label>
-    <input type="${f.type || "text"}" name="${f.key}" value="${String(val).replace(/"/g, "&quot;")}" ${f.placeholder ? `placeholder="${f.placeholder}"` : ""} ${f.step ? `step="${f.step}"` : ""}></div>`;
+    <input type="${f.type || "text"}" name="${f.key}" value="${String(val).replace(/"/g, "&quot;")}" ${f.placeholder ? `placeholder="${f.placeholder}"` : ""} ${f.step ? `step="${f.step}"` : ""} ${f.min != null ? `min="${f.min}"` : ""} ${f.readonly ? "readonly" : ""}>${f.hint ? `<div class="field-hint">${f.hint}</div>` : ""}</div>`;
 }
 function openModal({ title, fields, values = {}, onSave, onDelete }) {
   const buildFields = typeof fields === "function" ? fields : () => fields;
@@ -151,7 +181,7 @@ function openModal({ title, fields, values = {}, onSave, onDelete }) {
   const close = () => wrap.remove();
   const err = (m) => { errEl.textContent = m; errEl.hidden = false; };
   let cur = { ...values };
-  const collect = () => { body.querySelectorAll("[name]").forEach((el) => (cur[el.name] = el.value)); return cur; };
+  const collect = () => { body.querySelectorAll("[name]").forEach((el) => (cur[el.name] = el.type === "checkbox" ? el.checked : el.value)); return cur; };
   function renderBody() {
     const flds = buildFields(cur);
     body.innerHTML = flds.map((f) => fieldHTML(f, cur[f.key])).join("");
@@ -164,12 +194,12 @@ function openModal({ title, fields, values = {}, onSave, onDelete }) {
       if (!Array.isArray(cur[f.key])) cur[f.key] = Array.isArray(values[f.key]) ? values[f.key].map((m) => ({ ...m })) : [];
       const root = body.querySelector(`[data-mp-root="${f.key}"]`); if (!root) return;
       root.querySelectorAll("[data-mp-del]").forEach((btn) => btn.onclick = () => { collect(); cur[f.key] = cur[f.key].filter((m) => m.id !== btn.dataset.mpDel); renderBody(); });
+      root.querySelectorAll("[data-mp-edit]").forEach((btn) => btn.onclick = () => {
+        collect(); const mb = cur[f.key].find((m) => m.id === btn.dataset.mpEdit); if (!mb) return;
+        openMembershipModal({ title: "Editar plan", values: { ...mb }, onSave: (nm) => { collect(); cur[f.key] = cur[f.key].map((m) => m.id === mb.id ? { ...nm, id: mb.id } : m); renderBody(); } });
+      });
       const addBtn = root.querySelector("[data-mp-add]");
-      if (addBtn) addBtn.onclick = () => {
-        const sel = root.querySelector("[data-mp-plan]"), ven = root.querySelector("[data-mp-vence]");
-        if (!sel.value) return toast("Selecciona un servicio / plan para agregar.", "error");
-        collect(); cur[f.key] = [...cur[f.key], { id: uid(), planId: sel.value, vence: (ven.value || "").trim() }]; renderBody();
-      };
+      if (addBtn) addBtn.onclick = () => { collect(); openMembershipModal({ onSave: (nm) => { collect(); cur[f.key] = [...cur[f.key], nm]; renderBody(); } }); };
     });
   }
   renderBody();
@@ -181,7 +211,9 @@ function openModal({ title, fields, values = {}, onSave, onDelete }) {
     const flds = buildFields(cur), vals = {}; let ok = true;
     flds.forEach((f) => {
       if (f.type === "plans") { vals[f.key] = Array.isArray(cur[f.key]) ? cur[f.key] : []; return; }
+      if (f.type === "static") return;
       const el = body.querySelector(`[name="${f.key}"]`);
+      if (f.type === "checkbox") { vals[f.key] = el ? el.checked : !!cur[f.key]; return; }
       vals[f.key] = (el ? el.value : cur[f.key] || "").toString().trim();
       if (f.required && !vals[f.key]) { ok = false; if (el) el.classList.add("invalid"); } else if (el) el.classList.remove("invalid");
     });
@@ -253,7 +285,7 @@ function vUsuarios() {
         <td data-label="Cédula">${u.cedula || "—"}</td>
         <td data-label="Correo">${u.email || "—"}</td>
         <td data-label="Rol"><span class="role-badge role-${u.rol}">${cap(u.rol.toLowerCase())}</span></td>
-        <td data-label="Detalle">${u.detalle || (u.rol === "CLIENTE" ? planSummary(u) : "—")}</td>
+        <td data-label="Detalle">${u.rol === "INSTRUCTOR" ? (servicio(u.disciplinaId)?.nombre || u.detalle || "—") : (u.detalle || (u.rol === "CLIENTE" ? planSummary(u) : "—"))}</td>
         <td data-label="Teléfono">${u.telefono || "—"}</td>
         <td data-label="">${actBtns("editarUsuario", "eliminarUsuario", u.id)}</td>
       </tr>`).join("") || `<tr><td style="text-align:center;color:var(--muted)">Sin usuarios.</td></tr>`}
@@ -269,7 +301,10 @@ function formUsuario(v = {}, isNew = false) {
     { key: "rol", label: "Rol", type: "select", required: true, options: ROLES, control: true },
   ];
   if (rol === "EMPLEADO") f.push({ key: "detalle", label: "Cargo", placeholder: "Ej: Recepción" });
-  else if (rol === "INSTRUCTOR") f.push({ key: "detalle", label: "Especialidad", placeholder: "Ej: Boxeo" });
+  else if (rol === "INSTRUCTOR") {
+    f.push({ key: "disciplinaId", label: "Disciplina que enseña", type: "select", required: true, placeholder: "Selecciona…", options: state.servicios.filter((s) => s.tipo === "DIRIGIDA").map((s) => ({ value: s.id, label: s.nombre })) });
+    f.push({ key: "detalle", label: "Detalle (opcional)", placeholder: "Ej: Boxeo competitivo" });
+  }
   else {
     f.push({ key: "estado", label: "Estado", type: "select", options: ESTADOS });
     f.push({ key: "membresias", label: "Planes / servicios suscritos", type: "plans" });
@@ -293,7 +328,7 @@ function vClientes() {
         <td data-label="Planes">${planSummary(c)}</td>
         <td data-label="Estado"><span class="badge ${c.estado}">${cap(c.estado || "activo")}</span></td>
         <td data-label="Teléfono">${c.telefono || "—"}</td>
-        <td data-label="">${actBtnsCli(c.id)}</td>
+        <td data-label="">${actBtnsCli(c)}</td>
       </tr>`).join("") || `<tr><td style="text-align:center;color:var(--muted)">Sin clientes.</td></tr>`}
     </tbody></table></div></div>`;
 }
@@ -324,6 +359,9 @@ function vPerfil(id) {
     <button class="btn btn-ghost" data-action="volverClientes">← Volver</button>
     <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-ghost" data-action="editarCliente" data-id="${id}">Editar datos</button>
+      ${c.estado === "congelado"
+        ? `<button class="btn btn-ghost" data-action="descongelarCliente" data-id="${id}">Descongelar</button>`
+        : `<button class="btn btn-ghost" data-action="congelarCliente" data-id="${id}">Congelar</button>`}
       <button class="btn btn-primary" data-action="agregarPlan" data-id="${id}">+ Agregar plan</button>
     </div>
   </div>
@@ -331,6 +369,14 @@ function vPerfil(id) {
     <div class="av-lg">${initials(c.nombre)}</div>
     <div><h2>${c.nombre}</h2><div class="profile-meta"><span class="badge ${c.estado}">${cap(c.estado || "activo")}</span> · ${c.cedula || "—"}</div></div>
   </div>
+  ${c.estado === "congelado" && c.congelacion ? `<div class="card fade-in freeze-banner" style="margin-top:20px">
+    <h3>Membresía congelada</h3>
+    <div class="freeze-grid">
+      <div><span>Motivo</span><b>${c.congelacion.motivo || "—"}</b></div>
+      <div><span>Días</span><b>${c.congelacion.dias || 0}</b></div>
+      <div><span>Desde</span><b>${c.congelacion.desde || "—"}</b></div>
+      <div><span>Hasta</span><b>${c.congelacion.hasta || "—"}</b></div>
+    </div></div>` : ""}
   <div class="grid cols-3" data-stagger style="margin:20px 0">
     ${stat("Planes contratados", ms.length, "servicios activos", "planes", "tint-y")}
     ${stat("Total pagado", "$" + totalPagado.toFixed(0), "Bs " + bs(totalPagado), "pagos", "tint-b")}
@@ -348,11 +394,13 @@ function vPerfil(id) {
       </dl></div>
     <div class="card fade-in"><h3>Planes / servicios</h3>
       ${ms.length ? `<div class="table-wrap"><table>
-        <thead><tr><th>Servicio</th><th>Plan</th><th>Vence</th><th></th></tr></thead>
-        <tbody>${ms.map((m) => { const pl = planById(m.planId), s = pl ? servicio(pl.areaId) : null; return `<tr>
-          <td data-label="Servicio"><span class="serv-color" style="background:${s?.color || "#404040"}"></span>${s?.nombre || "—"}</td>
-          <td data-label="Plan">${pl ? pl.duracion + " · $" + pl.usd : "—"}</td>
+        <thead><tr><th>Servicio</th><th>Plan</th><th>Inicio</th><th>Vence</th><th>Entrenador</th><th></th></tr></thead>
+        <tbody>${ms.map((m) => { const pl = planById(m.planId), s = pl ? servicio(pl.areaId) : null; const ent = m.entrenadorId ? usuario(m.entrenadorId) : null; return `<tr>
+          <td data-label="Servicio"><span class="serv-color" style="background:${s?.color || "#404040"}"></span>${planNombre(pl)}</td>
+          <td data-label="Plan">${pl ? pl.duracion + (m.personalizado ? " · pers." : "") : "—"}</td>
+          <td data-label="Inicio">${m.inicio || "—"}</td>
           <td data-label="Vence">${m.vence || "—"}</td>
+          <td data-label="Entrenador">${ent ? ent.nombre : "—"}</td>
           <td data-label=""><button class="icon-btn del" title="Quitar" data-action="quitarPlan" data-id="${id}|${m.id}">${ICO("del")}</button></td>
         </tr>`; }).join("")}</tbody></table></div>`
         : `<div class="section-note">Sin planes. Usa “Agregar plan” para inscribirlo en Pesas, Boxeo, etc.</div>`}
@@ -360,11 +408,68 @@ function vPerfil(id) {
   </div>
   <div class="card fade-in" style="margin-top:20px"><h3>Historial de pagos</h3>${tablaPagos(pagosC.slice(0, 10), false)}</div>`;
 }
-function formMembership() {
-  return [
-    { key: "planId", label: "Plan / servicio", type: "select", required: true, placeholder: "Selecciona…", options: planOpts() },
-    { key: "vence", label: "Vence", placeholder: "dd/mm/aaaa" },
-  ];
+
+/* ----- Membresía: campos dinámicos (fecha auto, personalizado, entrenador) ----- */
+function membershipFields(v) {
+  if (!v.inicio) v.inicio = fmtDMY(new Date());
+  const plan = planById(v.planId);
+  const f = [{ key: "planId", label: "Plan / servicio", type: "select", required: true, placeholder: "Selecciona…", options: planOpts(), control: true }];
+  if (!plan) return f;
+  const inicio = parseDMY(v.inicio) || new Date();
+  f.push({ key: "inicio", label: "Fecha de inicio", type: "text", placeholder: "dd/mm/aaaa", control: true });
+  f.push({ key: "_precios", type: "static", label: "Precios del plan", value: `BCV <b>$${plan.usdBcv}</b> (Bs ${bs(plan.usdBcv)}) &nbsp;·&nbsp; Divisas <b>$${plan.usdDivisas}</b> (Bs ${bs(plan.usdDivisas)})` });
+  f.push({ key: "personalizado", label: "Personalizado: calcular días según el monto pagado", type: "checkbox", control: true });
+  if (v.personalizado) {
+    const dim = daysInMonth(inicio);
+    const monto = parseFloat(v.monto) || 0;
+    const ppdBcv = plan.usdBcv / dim, ppdDiv = plan.usdDivisas / dim;
+    const diasBcv = monto > 0 ? Math.floor(monto / ppdBcv) : 0;
+    const diasDiv = monto > 0 ? Math.floor(monto / ppdDiv) : 0;
+    const moneda = v.moneda || "BCV";
+    const dias = moneda === "Divisas" ? diasDiv : diasBcv;
+    f.push({ key: "monto", label: "Monto a cancelar (USD)", type: "number", step: "0.5", min: 0, control: true });
+    f.push({ key: "moneda", label: "Moneda del monto", type: "select", control: true, options: [{ value: "BCV", label: "BCV (bolívares)" }, { value: "Divisas", label: "Divisas (efectivo $)" }] });
+    f.push({ key: "_equiv", type: "static", label: `Equivalencia en días · mes actual de ${dim} días`, value:
+      `Precio por día → BCV <b>$${ppdBcv.toFixed(2)}</b> · Divisas <b>$${ppdDiv.toFixed(2)}</b><br>Con <b>$${monto || 0}</b>: <b>${diasBcv} días</b> en BCV &nbsp;·&nbsp; <b>${diasDiv} días</b> en Divisas` });
+    f.push({ key: "_vence", type: "static", label: "Inicio / vencimiento", value: dias > 0 ? `Inicia <b>${v.inicio}</b> · vence <b>${fmtDMY(addDays(inicio, dias))}</b> (${dias} días, ${moneda})` : "Ingresa un monto para calcular los días" });
+  } else {
+    f.push({ key: "_vence", type: "static", label: "Inicio / vencimiento (automático)", value: `Inicia <b>${v.inicio}</b> · vence <b>${fmtDMY(venceDeInicio(plan, inicio))}</b> · ${plan.duracion.toLowerCase()}` });
+  }
+  if (needsTrainer(plan)) {
+    const opts = instructoresDe(plan.incluye || [plan.areaId]).map((u) => ({ value: u.id, label: u.nombre + (servicio(u.disciplinaId) ? " · " + servicio(u.disciplinaId).nombre : "") }));
+    f.push({ key: "entrenadorId", label: "Entrenador asignado (Boxeo / MMA)", type: "select", required: true, placeholder: "Selecciona entrenador…", options: opts });
+  }
+  return f;
+}
+function buildMembership(v, keepId) {
+  const plan = planById(v.planId);
+  const inicio = parseDMY(v.inicio) || new Date();
+  const mb = { id: keepId || uid(), planId: v.planId, inicio: fmtDMY(inicio) };
+  if (v.personalizado && plan) {
+    const dim = daysInMonth(inicio);
+    const monto = parseFloat(v.monto) || 0;
+    const moneda = v.moneda || "BCV";
+    const ppd = (moneda === "Divisas" ? plan.usdDivisas : plan.usdBcv) / dim;
+    const dias = monto > 0 && ppd > 0 ? Math.floor(monto / ppd) : 0;
+    mb.personalizado = true; mb.monto = monto; mb.moneda = moneda; mb.dias = dias;
+    mb.vence = fmtDMY(addDays(inicio, dias));
+  } else {
+    mb.vence = fmtDMY(venceDeInicio(plan, inicio));
+  }
+  if (needsTrainer(plan)) mb.entrenadorId = v.entrenadorId || "";
+  return mb;
+}
+function openMembershipModal({ values = {}, title = "Agregar plan / servicio", onSave }) {
+  openModal({
+    title, fields: membershipFields, values: { ...values },
+    onSave: (v) => {
+      if (!v.planId) return { error: "Selecciona un plan." };
+      const plan = planById(v.planId);
+      if (v.personalizado && !(parseFloat(v.monto) > 0)) return { error: "Ingresa el monto para calcular los días." };
+      if (needsTrainer(plan) && !v.entrenadorId) return { error: "Asigna un entrenador para Boxeo/MMA." };
+      onSave(buildMembership(v, values.id));
+    },
+  });
 }
 
 function vAsistencia() {
@@ -437,24 +542,31 @@ function vPlanes() {
           <div class="plan-acts">
             <button class="icon-btn" data-action="editarPlan" data-id="${p.id}">${ICO("edit")}</button>
             <button class="icon-btn del" data-action="eliminarPlan" data-id="${p.id}">${ICO("del")}</button></div>
-          <div class="dur">${p.duracion}</div><div class="price"><small>$</small>${p.usd}</div>
-          <div class="price-bs">≈ Bs ${bs(p.usd)}</div>
-          <div class="feat">Acceso a ${s.nombre}</div>
-          <div class="feat">${p.duracion === "Mensual" ? "Congelable hasta 7 días" : "Sin permanencia"}</div>
+          <div class="dur">${p.nombre || p.duracion}${p.personalizado ? " · pers." : ""}</div>
+          <div class="price"><small>$</small>${p.usdBcv}<span class="price-tag">BCV</span></div>
+          <div class="price-bs">≈ Bs ${bs(p.usdBcv)}</div>
+          <div class="price2"><b>$${p.usdDivisas}</b> divisas <span>· Bs ${bs(p.usdDivisas)}</span></div>
+          <div class="feat">${p.nombre ? "Incluye: " + (p.incluye || []).map((a) => servicio(a)?.nombre).filter(Boolean).join(" + ") : "Acceso a " + s.nombre}</div>
+          <div class="feat">${p.duracion === "Mensual" ? "Congelable" : "Sin permanencia"}</div>
         </div>`).join("") || `<div class="section-note">Sin planes en esta área.</div>`}</div>
     </div>`).join("")}`;
 }
 function formPlan() {
   return [
     { key: "areaId", label: "Área de servicio", type: "select", required: true, placeholder: "Selecciona…", options: state.servicios.map((s) => ({ value: s.id, label: s.nombre })) },
+    { key: "nombre", label: "Nombre del plan (opcional · combos)", placeholder: "Ej: Pesas + Boxeo" },
     { key: "duracion", label: "Duración", type: "select", required: true, options: DURACIONES.map((d) => ({ value: d, label: d })) },
-    { key: "usd", label: "Precio (USD)", type: "number", required: true, step: "0.5" },
+    { key: "usdBcv", label: "Precio BCV — pago en bolívares (USD)", type: "number", required: true, step: "0.5" },
+    { key: "usdDivisas", label: "Precio Divisas — efectivo en $ (USD)", type: "number", required: true, step: "0.5" },
   ];
 }
 
 function chipClase(c) {
-  const s = servicio(c.areaId), instr = usuario(c.instructorId);
-  return `<div class="klass" style="background:${s?.color || "#404040"}" data-action="editarClase" data-id="${c.id}"><b>${s?.nombre || "?"}</b><span>${instr ? instr.nombre.split(" ").slice(-1)[0] : ""}</span></div>`;
+  const s = servicio(c.areaId);
+  const i1 = usuario(c.instructorId), i2 = c.instructorId2 ? usuario(c.instructorId2) : null;
+  const nombres = [i1, i2].filter(Boolean).map((u) => u.nombre.split(" ")[0]).join(" / ");
+  const pers = c.tipo === "personalizada";
+  return `<div class="klass ${pers ? "klass-pers" : ""}" style="background:${s?.color || "#404040"}" data-action="editarClase" data-id="${c.id}"><b>${s?.nombre || "?"}${pers ? " <em>· Pers.</em>" : ""}</b><span>${nombres}</span></div>`;
 }
 function vHorarios() {
   let grid = `<div></div>${DIAS.map((d) => `<div class="cal-head">${d}</div>`).join("")}`;
@@ -474,7 +586,8 @@ function vHorarios() {
   return `
   <div class="msg warning" style="margin-bottom:16px">Las áreas de <b>acceso libre</b> (Pesas) están disponibles todo el horario y no se programan aquí. Este calendario es solo para <b>clases dirigidas</b>.</div>
   <div class="toolbar">
-    <div class="section-note" style="margin:0">Un instructor dicta <b>1 clase por bloque</b> · máximo <b>2 simultáneas</b>. Toca una clase para editarla.</div>
+    <div class="section-note" style="margin:0">Clases <b>fijas</b> y <b>personalizadas</b>. Toca una clase para editarla.</div>
+    <div class="cal-legend"><span><i class="lg-fija"></i> Fija</span><span><i class="lg-pers"></i> Personalizada</span></div>
     <button class="btn btn-primary" data-action="nuevaClase" style="margin-left:auto">+ Nueva clase</button>
   </div>
   <div class="card fade-in cal">
@@ -485,18 +598,21 @@ function vHorarios() {
     </div>
   </div>`;
 }
-function formClase() {
+function formClase(v) {
+  v = v || {};
+  const opts = instructoresDe(v.areaId || []).map((u) => ({ value: u.id, label: u.nombre + (servicio(u.disciplinaId) ? " · " + servicio(u.disciplinaId).nombre : "") }));
   return [
-    { key: "areaId", label: "Clase dirigida", type: "select", required: true, placeholder: "Selecciona…", options: state.servicios.filter((s) => s.tipo === "DIRIGIDA").map((s) => ({ value: s.id, label: s.nombre })) },
-    { key: "instructorId", label: "Instructor", type: "select", required: true, placeholder: "Selecciona…", options: instructores().map((u) => ({ value: u.id, label: u.nombre })) },
+    { key: "areaId", label: "Clase dirigida", type: "select", required: true, placeholder: "Selecciona…", options: state.servicios.filter((s) => s.tipo === "DIRIGIDA").map((s) => ({ value: s.id, label: s.nombre })), control: true },
+    { key: "tipo", label: "Tipo de clase", type: "select", required: true, options: TIPOS_CLASE },
+    { key: "instructorId", label: "Entrenador", type: "select", required: true, placeholder: "Selecciona…", options: opts },
+    { key: "instructorId2", label: "Segundo entrenador (opcional)", type: "select", placeholder: "Ninguno", options: opts },
     { key: "dia", label: "Día", type: "select", required: true, options: DIAS.map((d, i) => ({ value: i, label: d })) },
     { key: "bloque", label: "Bloque horario", type: "select", required: true, options: BLOQUES.map((b) => ({ value: b, label: b })) },
   ];
 }
 function validarClase(v, id) {
   const dia = Number(v.dia);
-  if (state.clases.find((c) => c.id !== id && Number(c.dia) === dia && c.bloque === v.bloque && c.instructorId === v.instructorId)) return { error: "Ese instructor ya tiene una clase en ese bloque." };
-  if (state.clases.filter((c) => c.id !== id && Number(c.dia) === dia && c.bloque === v.bloque).length >= 2) return { error: "Ya hay 2 clases simultáneas en ese horario (tope del gimnasio)." };
+  if (state.clases.find((c) => c.id !== id && Number(c.dia) === dia && c.bloque === v.bloque && c.instructorId === v.instructorId)) return { error: "Ese entrenador ya tiene una clase en ese bloque." };
   return null;
 }
 
@@ -521,18 +637,28 @@ function tablaPagos(rows, withActions) {
         <td data-label="Cliente"><div class="cell-name"><div class="av ${avClass(i)}">${initials(c?.nombre)}</div><b>${c?.nombre || "—"}</b></div></td>
         <td data-label="Plan">${planLabel(p.planId)}</td>
         <td data-label="Monto"><span class="usd">$${Number(p.usd).toFixed(2)}</span><div class="bs">Bs ${bs(Number(p.usd))}</div></td>
-        <td data-label="Método">${p.metodo}</td><td data-label="Hora">${p.hora}</td>
+        <td data-label="Método">${p.metodo}${p.moneda ? ` <span class="mon-tag ${p.moneda === "Divisas" ? "div" : "bcv"}">${p.moneda}</span>` : ""}</td><td data-label="Hora">${p.hora}</td>
         ${withActions ? `<td data-label="">${actBtns("editarPago", "eliminarPago", p.id)}</td>` : ""}
       </tr>`; }).join("") || `<tr><td style="text-align:center;color:var(--muted)">Sin pagos.</td></tr>`}
     </tbody></table></div>`;
 }
-function formPago() {
-  return [
+function formPago(v) {
+  v = v || {};
+  const plan = planById(v.planId);
+  const metodo = v.metodo || METODOS[0];
+  const moneda = monedaDeMetodo(metodo);
+  const f = [
     { key: "clienteId", label: "Cliente", type: "select", required: true, placeholder: "Selecciona…", options: clientes().map((c) => ({ value: c.id, label: c.nombre })) },
-    { key: "planId", label: "Plan", type: "select", required: true, placeholder: "Selecciona…", options: planOpts() },
-    { key: "usd", label: "Monto (USD)", type: "number", required: true, step: "0.5" },
-    { key: "metodo", label: "Método de pago", type: "select", required: true, options: METODOS.map((m) => ({ value: m, label: m })) },
+    { key: "planId", label: "Plan", type: "select", required: true, placeholder: "Selecciona…", options: planOpts(), control: true },
+    { key: "metodo", label: "Método de pago", type: "select", required: true, options: METODOS.map((m) => ({ value: m, label: m })), control: true },
   ];
+  if (plan) {
+    const key = v.planId + "|" + metodo;
+    if (v._k !== key) { v.usd = precioPlan(plan, moneda); v._k = key; }
+    f.push({ key: "_precio", type: "static", label: `Tarifa según método (${moneda})`, value: `BCV $${plan.usdBcv} (Bs ${bs(plan.usdBcv)}) · Divisas $${plan.usdDivisas} (Bs ${bs(plan.usdDivisas)})` });
+  }
+  f.push({ key: "usd", label: `Monto cobrado en USD (${moneda})`, type: "number", required: true, step: "0.5" });
+  return f;
 }
 
 /* ----- Reportes ----- */
@@ -615,13 +741,14 @@ const handlers = {
     const o = { id: uid(), ...v };
     if (o.rol === "CLIENTE") { if (!o.estado) o.estado = "activo"; o.membresias = Array.isArray(o.membresias) ? o.membresias : []; }
     else delete o.membresias;
+    if (o.rol !== "INSTRUCTOR") delete o.disciplinaId;
     delete o.planId; delete o.vence;
     state.usuarios.push(o); save(); rerender(); toast("Usuario creado.");
   }}),
-  editarUsuario: (id) => { const u = usuario(id); openModal({ title: "Editar usuario", fields: (v) => formUsuario(v, false), values: { ...u }, onSave: (v) => { delete v.planId; delete v.vence; if (v.rol !== "CLIENTE") delete v.membresias; Object.assign(u, v); save(); rerender(); toast("Usuario actualizado."); }, onDelete: () => handlers.eliminarUsuario(id) }); },
+  editarUsuario: (id) => { const u = usuario(id); openModal({ title: "Editar usuario", fields: (v) => formUsuario(v, false), values: { ...u }, onSave: (v) => { delete v.planId; delete v.vence; if (v.rol !== "CLIENTE") delete v.membresias; if (v.rol !== "INSTRUCTOR") { delete v.disciplinaId; u.disciplinaId = undefined; } Object.assign(u, v); save(); rerender(); toast("Usuario actualizado."); }, onDelete: () => handlers.eliminarUsuario(id) }); },
   eliminarUsuario: (id) => {
     const u = usuario(id);
-    if (u.rol === "INSTRUCTOR" && state.clases.some((c) => c.instructorId === id)) return toast("No se puede eliminar: el instructor tiene clases asignadas.", "error");
+    if (u.rol === "INSTRUCTOR" && state.clases.some((c) => c.instructorId === id || c.instructorId2 === id)) return toast("No se puede eliminar: el instructor tiene clases asignadas.", "error");
     if (!confirm(`¿Eliminar a ${u.nombre}?`)) return;
     state.usuarios = state.usuarios.filter((x) => x.id !== id);
     state.pagos = state.pagos.filter((p) => p.clienteId !== id);
@@ -639,8 +766,45 @@ const handlers = {
   editarCliente: (id) => { const c = usuario(id); openModal({ title: "Editar cliente", fields: formCliente(false), values: { ...c }, onSave: (v) => { delete v.planId; delete v.vence; if (!Array.isArray(v.membresias)) v.membresias = []; Object.assign(c, v); save(); rerender(); toast("Cliente actualizado."); }, onDelete: () => handlers.eliminarUsuario(id) }); },
   verPerfil: (id) => { profileId = id; go("perfil"); },
   volverClientes: () => go("clientes"),
-  agregarPlan: (id) => openModal({ title: "Agregar plan al cliente", fields: formMembership(), onSave: (v) => { const c = usuario(id); if (!c.membresias) c.membresias = []; c.membresias.push({ id: uid(), planId: v.planId, vence: v.vence || "" }); save(); rerender(); toast("Plan agregado."); } }),
+  agregarPlan: (id) => openMembershipModal({ onSave: (mb) => { const c = usuario(id); if (!c.membresias) c.membresias = []; c.membresias.push(mb); save(); rerender(); toast("Plan agregado."); } }),
   quitarPlan: (data) => { const [cid, mid] = data.split("|"); const c = usuario(cid); if (!c) return; if (!confirm("¿Quitar este plan del cliente?")) return; c.membresias = membs(c).filter((m) => m.id !== mid); save(); rerender(); toast("Plan eliminado."); },
+
+  congelarCliente: (id) => {
+    const c = usuario(id);
+    const hoy = new Date();
+    const disp = membs(c).map((m) => ({ m, d: Math.max(0, diffDays(parseDMY(m.vence) || hoy, hoy)) })).filter((x) => parseDMY(x.m.vence));
+    const minDisp = disp.length ? Math.min(...disp.map((x) => x.d)) : 0;
+    const dispNote = disp.length
+      ? disp.map((x) => `${planNombre(planById(x.m.planId))}: <b>${x.d}</b> día(s) (vence ${x.m.vence})`).join("<br>") + `<br><b>Mínimo disponible: ${minDisp} día(s)</b>`
+      : "El cliente no tiene planes con fecha de vencimiento.";
+    openModal({
+      title: "Congelar membresía",
+      values: {},
+      fields: (v) => {
+        const dias = parseInt(v.dias) || 0;
+        const f = [
+          { key: "_disp", type: "static", label: "Días disponibles por plan", value: dispNote },
+          { key: "motivo", label: "Motivo de la congelación", required: true, placeholder: "Ej: viaje, lesión, reposo médico…" },
+          { key: "dias", label: "¿Cuántos días congelar?", type: "number", required: true, min: 1, control: true },
+        ];
+        if (dias > 0) { const desde = new Date(), hasta = addDays(desde, dias); f.push({ key: "_rango", type: "static", label: "Período de congelación", value: `Desde <b>${fmtDMY(desde)}</b> hasta <b>${fmtDMY(hasta)}</b><br>Se extenderá el vencimiento de <b>todos</b> los planes ${dias} día(s).` }); }
+        return f;
+      },
+      onSave: (v) => {
+        const dias = parseInt(v.dias) || 0;
+        if (!v.motivo) return { error: "Indica el motivo de la congelación." };
+        if (dias < 1) return { error: "Indica cuántos días congelar." };
+        const desde = new Date(), hasta = addDays(desde, dias);
+        c.estado = "congelado";
+        c.congelacion = { motivo: v.motivo, dias, desde: fmtDMY(desde), hasta: fmtDMY(hasta) };
+        if (!Array.isArray(c.congelaciones)) c.congelaciones = [];
+        c.congelaciones.push({ ...c.congelacion, ts: Date.now() });
+        membs(c).forEach((m) => { const ven = parseDMY(m.vence); if (ven) m.vence = fmtDMY(addDays(ven, dias)); });
+        save(); rerender(); toast(`Membresía congelada ${dias} día(s).`);
+      },
+    });
+  },
+  descongelarCliente: (id) => { const c = usuario(id); if (!confirm(`¿Descongelar a ${c.nombre} y reactivar su membresía?`)) return; c.estado = "activo"; c.congelacion = null; save(); rerender(); toast("Membresía reactivada."); },
 
   nuevoServicio: () => openModal({ title: "Nueva área de servicio", fields: formServicio(), values: { tipo: "DIRIGIDA" }, onSave: (v) => { state.servicios.push({ id: uid(), ...v }); save(); rerender(); toast("Área creada."); } }),
   editarServicio: (id) => { const s = servicio(id); openModal({ title: "Editar área", fields: formServicio(), values: { ...s }, onSave: (v) => { Object.assign(s, v); save(); rerender(); toast("Área actualizada."); }, onDelete: () => handlers.eliminarServicio(id) }); },
@@ -650,16 +814,16 @@ const handlers = {
     if (!confirm("¿Eliminar esta área?")) return; state.servicios = state.servicios.filter((x) => x.id !== id); save(); rerender(); toast("Área eliminada.");
   },
 
-  nuevoPlan: () => openModal({ title: "Nuevo plan", fields: formPlan(), onSave: (v) => { state.planes.push({ id: uid(), areaId: v.areaId, duracion: v.duracion, usd: Number(v.usd) }); save(); rerender(); toast("Plan creado."); } }),
-  editarPlan: (id) => { const p = planById(id); openModal({ title: "Editar plan", fields: formPlan(), values: { ...p }, onSave: (v) => { Object.assign(p, { areaId: v.areaId, duracion: v.duracion, usd: Number(v.usd) }); save(); rerender(); toast("Plan actualizado."); }, onDelete: () => handlers.eliminarPlan(id) }); },
+  nuevoPlan: () => openModal({ title: "Nuevo plan", fields: formPlan(), onSave: (v) => { const bcv = Number(v.usdBcv), div = Number(v.usdDivisas); state.planes.push({ id: uid(), areaId: v.areaId, nombre: (v.nombre || "").trim() || undefined, duracion: v.duracion, usdBcv: bcv, usdDivisas: div, usd: bcv, incluye: [v.areaId] }); save(); rerender(); toast("Plan creado."); } }),
+  editarPlan: (id) => { const p = planById(id); openModal({ title: "Editar plan", fields: formPlan(), values: { ...p }, onSave: (v) => { const bcv = Number(v.usdBcv), div = Number(v.usdDivisas); Object.assign(p, { areaId: v.areaId, nombre: (v.nombre || "").trim() || undefined, duracion: v.duracion, usdBcv: bcv, usdDivisas: div, usd: bcv }); if (!p.incluye) p.incluye = [v.areaId]; save(); rerender(); toast("Plan actualizado."); }, onDelete: () => handlers.eliminarPlan(id) }); },
   eliminarPlan: (id) => { if (!confirm("¿Eliminar este plan?")) return; state.planes = state.planes.filter((x) => x.id !== id); save(); rerender(); toast("Plan eliminado."); },
 
-  nuevaClase: () => openModal({ title: "Nueva clase", fields: formClase(), onSave: (v) => { const e = validarClase(v, null); if (e) return e; state.clases.push({ id: uid(), areaId: v.areaId, instructorId: v.instructorId, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase agregada."); } }),
-  nuevaClaseEn: (data) => { const [dia, bloque] = data.split("|"); openModal({ title: "Nueva clase", fields: formClase(), values: { dia, bloque }, onSave: (v) => { const e = validarClase(v, null); if (e) return e; state.clases.push({ id: uid(), areaId: v.areaId, instructorId: v.instructorId, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase agregada."); } }); },
-  editarClase: (id) => { const c = state.clases.find((x) => x.id === id); openModal({ title: "Editar clase", fields: formClase(), values: { ...c }, onSave: (v) => { const e = validarClase(v, id); if (e) return e; Object.assign(c, { areaId: v.areaId, instructorId: v.instructorId, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase actualizada."); }, onDelete: () => { if (!confirm("¿Eliminar esta clase?")) return; state.clases = state.clases.filter((x) => x.id !== id); save(); rerender(); toast("Clase eliminada."); } }); },
+  nuevaClase: () => openModal({ title: "Nueva clase", fields: formClase, values: { tipo: "fija" }, onSave: (v) => { const e = validarClase(v, null); if (e) return e; state.clases.push({ id: uid(), areaId: v.areaId, tipo: v.tipo || "fija", instructorId: v.instructorId, instructorId2: v.instructorId2 || undefined, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase agregada."); } }),
+  nuevaClaseEn: (data) => { const [dia, bloque] = data.split("|"); openModal({ title: "Nueva clase", fields: formClase, values: { dia, bloque, tipo: "fija" }, onSave: (v) => { const e = validarClase(v, null); if (e) return e; state.clases.push({ id: uid(), areaId: v.areaId, tipo: v.tipo || "fija", instructorId: v.instructorId, instructorId2: v.instructorId2 || undefined, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase agregada."); } }); },
+  editarClase: (id) => { const c = state.clases.find((x) => x.id === id); openModal({ title: "Editar clase", fields: formClase, values: { ...c }, onSave: (v) => { const e = validarClase(v, id); if (e) return e; Object.assign(c, { areaId: v.areaId, tipo: v.tipo || "fija", instructorId: v.instructorId, instructorId2: v.instructorId2 || undefined, dia: Number(v.dia), bloque: v.bloque }); save(); rerender(); toast("Clase actualizada."); }, onDelete: () => { if (!confirm("¿Eliminar esta clase?")) return; state.clases = state.clases.filter((x) => x.id !== id); save(); rerender(); toast("Clase eliminada."); } }); },
 
-  nuevoPago: () => openModal({ title: "Registrar pago", fields: formPago(), onSave: (v) => { state.pagos.unshift({ id: uid(), clienteId: v.clienteId, planId: v.planId, usd: Number(v.usd), metodo: v.metodo, hora: nowTime(), fecha: todayISO() }); save(); rerender(); toast("Pago registrado."); } }),
-  editarPago: (id) => { const p = state.pagos.find((x) => x.id === id); openModal({ title: "Editar pago", fields: formPago(), values: { ...p }, onSave: (v) => { Object.assign(p, { clienteId: v.clienteId, planId: v.planId, usd: Number(v.usd), metodo: v.metodo }); save(); rerender(); toast("Pago actualizado."); }, onDelete: () => { if (!confirm("¿Eliminar este pago?")) return; state.pagos = state.pagos.filter((x) => x.id !== id); save(); rerender(); toast("Pago eliminado."); } }); },
+  nuevoPago: () => openModal({ title: "Registrar pago", fields: formPago, onSave: (v) => { state.pagos.unshift({ id: uid(), clienteId: v.clienteId, planId: v.planId, usd: Number(v.usd), moneda: monedaDeMetodo(v.metodo), metodo: v.metodo, hora: nowTime(), fecha: todayISO() }); save(); rerender(); toast("Pago registrado."); } }),
+  editarPago: (id) => { const p = state.pagos.find((x) => x.id === id); openModal({ title: "Editar pago", fields: formPago, values: { ...p }, onSave: (v) => { Object.assign(p, { clienteId: v.clienteId, planId: v.planId, usd: Number(v.usd), moneda: monedaDeMetodo(v.metodo), metodo: v.metodo }); save(); rerender(); toast("Pago actualizado."); }, onDelete: () => { if (!confirm("¿Eliminar este pago?")) return; state.pagos = state.pagos.filter((x) => x.id !== id); save(); rerender(); toast("Pago eliminado."); } }); },
   eliminarPago: (id) => { if (!confirm("¿Eliminar este pago?")) return; state.pagos = state.pagos.filter((x) => x.id !== id); save(); rerender(); toast("Pago eliminado."); },
 
   marcarEntrada: () => {
