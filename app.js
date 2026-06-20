@@ -499,6 +499,14 @@ function vAsistencia() {
   const hoy = state.asistencias;
   const enGym = hoy.filter((a) => !a.salida);
   const distintos = new Set(hoy.map((a) => a.clienteId)).size;
+  
+  // Función para generar un estilo gigante y llamativo
+  const getStatusStyle = (estado) => {
+    if (estado === 'moroso') return 'background: #fff0ef; color: #d72c2c; border: 3px solid #d72c2c; font-size: 1.1rem; padding: 10px 18px; border-radius: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 6px rgba(215,44,44,0.2);';
+    if (estado === 'congelado') return 'background: #eff6ff; color: #1d4ed8; border: 3px solid #1d4ed8; font-size: 1.1rem; padding: 10px 18px; border-radius: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 6px rgba(29,78,216,0.2);';
+    return 'background: #f0fdf4; color: #15803d; border: 3px solid #15803d; font-size: 1.1rem; padding: 10px 18px; border-radius: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; display: inline-block; box-shadow: 0 4px 6px rgba(21,128,61,0.2);';
+  };
+
   return `
   <div class="toolbar">
     <div class="doc-entry">
@@ -513,16 +521,19 @@ function vAsistencia() {
     ${stat("Clientes distintos", distintos, "personas hoy", "dashboard", "tint-c")}
   </div>
   <div class="card fade-in"><h3>Asistencia de hoy</h3><div class="table-wrap"><table>
-    <thead><tr><th>Cliente</th><th>Cédula</th><th>Entrenador</th><th>Entrada</th><th>Salida</th><th>Estado</th><th></th></tr></thead>
+    <thead><tr><th>Cliente</th><th>Cédula</th><th>Estatus Membresía</th><th>Entrada</th><th>Salida</th><th>Ubicación</th><th></th></tr></thead>
     <tbody>${hoy.slice().reverse().map((a, i) => {
       const c = usuario(a.clienteId), dentro = !a.salida;
+      const estado = c?.estado || 'activo';
       return `<tr>
         <td data-label="Cliente"><div class="cell-name"><div class="av ${avClass(i)}">${initials(c?.nombre)}</div><b>${c?.nombre || "—"}</b></div></td>
         <td data-label="Cédula">${c?.cedula || "—"}</td>
-        <td data-label="Entrenador">${entrenadoresSummary(c)}</td>
+        <td data-label="Estatus Membresía">
+          <span style="${getStatusStyle(estado)}">${estado}</span>
+        </td>
         <td data-label="Entrada">${a.entrada}</td>
         <td data-label="Salida">${a.salida || "—"}</td>
-        <td data-label="Estado">${dentro ? '<span class="badge activo">En el gimnasio</span>' : '<span class="badge congelado">Se retiró</span>'}</td>
+        <td data-label="Ubicación">${dentro ? '<span class="badge activo">En el gimnasio</span>' : '<span class="badge congelado">Se retiró</span>'}</td>
         <td data-label=""><div class="row-actions">${dentro ? `<button class="btn btn-ghost" style="padding:6px 12px" data-action="registrarSalida" data-id="${a.id}">Salida</button>` : ""}<button class="icon-btn del" data-action="eliminarAsistencia" data-id="${a.id}">${ICO("del")}</button></div></td>
       </tr>`;
     }).join("") || `<tr><td style="text-align:center;color:var(--muted)" colspan="7">Sin registros hoy.</td></tr>`}
@@ -850,14 +861,65 @@ const handlers = {
   editarPago: (id) => { const p = state.pagos.find((x) => x.id === id); openModal({ title: "Editar pago", fields: formPago, values: { ...p }, onSave: (v) => { Object.assign(p, { clienteId: v.clienteId, planId: v.planId, usd: Number(v.usd), moneda: monedaDeMetodo(v.metodo), metodo: v.metodo }); save(); rerender(); toast("Pago actualizado."); }, onDelete: () => { if (!confirm("¿Eliminar este pago?")) return; state.pagos = state.pagos.filter((x) => x.id !== id); save(); rerender(); toast("Pago eliminado."); } }); },
   eliminarPago: (id) => { if (!confirm("¿Eliminar este pago?")) return; state.pagos = state.pagos.filter((x) => x.id !== id); save(); rerender(); toast("Pago eliminado."); },
 
+// --- Función auxiliar para la alerta gigante ---
+  mostrarAlertaGigante: (cliente) => {
+    const estado = cliente.estado || 'activo';
+    let color = '#15803d'; // Verde oscuro
+    let icono = '✅';
+    let texto = 'ACTIVO';
+    
+    if (estado === 'moroso') { color = '#d72c2c'; icono = '⚠️'; texto = 'MOROSO'; }
+    if (estado === 'congelado') { color = '#1d4ed8'; icono = '❄️'; texto = 'CONGELADO'; }
+
+    const overlay = document.createElement("div");
+    overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.3s;`;
+    
+    overlay.innerHTML = `
+      <div style="background:#fff; border-radius:24px; padding:60px 40px; text-align:center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.8); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-bottom: 20px solid ${color}; width: 90%; max-width: 600px;">
+        <div style="font-size: 100px; line-height: 1; margin-bottom: 20px;">${icono}</div>
+        <h2 style="margin: 0 0 10px 0; font-size: 2.5rem; color: #333;">${cliente.nombre}</h2>
+        <p style="margin: 0; font-size: 1.5rem; color: #666;">C.I: ${cliente.cedula || '—'}</p>
+        <div style="font-size: 4.5rem; font-weight: 900; margin-top: 25px; color: ${color}; text-transform: uppercase; letter-spacing: 4px;">
+          ${texto}
+        </div>
+      </div>
+      <style>
+        @keyframes popIn {
+          0% { transform: scale(0.5); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      </style>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Tocar para cerrar, o auto-cierre a los 3.5 segundos
+    const closeAlert = () => {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 300);
+    };
+    overlay.addEventListener("click", closeAlert);
+    setTimeout(closeAlert, 3500);
+  },
+
   marcarEntrada: () => {
     const inp = $("#cedulaInput"), tipo = $("#tipoDoc") ? $("#tipoDoc").value : "V", num = inp ? inp.value : "";
     if (!normCed(num)) { toast("Ingresa el número de cédula.", "error"); if (inp) inp.focus(); return; }
     const target = normCed(tipo + num);
     const cli = clientes().find((c) => normCed(c.cedula) === target);
     if (!cli) { toast(`No se encontró un cliente con la cédula ${tipo}-${num}.`, "error"); return; }
-    state.asistencias.push({ id: uid(), clienteId: cli.id, entrada: nowTime(), salida: null }); save();
-    toast(`Entrada registrada: ${cli.nombre}`); rerender();
+    
+    // Registramos la entrada
+    state.asistencias.push({ id: uid(), clienteId: cli.id, entrada: nowTime(), salida: null }); 
+    save();
+    
+    // Lanzamos la alerta gigante en lugar del toast pequeñito
+    handlers.mostrarAlertaGigante(cli);
+    
+    // Limpiamos el input automáticamente para la siguiente persona
+    if(inp) { inp.value = ''; inp.focus(); }
+    
+    rerender();
   },
   registrarSalida: (id) => { const a = state.asistencias.find((x) => x.id === id); if (a) { a.salida = nowTime(); save(); toast("Salida registrada."); rerender(); } },
   eliminarAsistencia: (id) => { if (!confirm("¿Eliminar este registro?")) return; state.asistencias = state.asistencias.filter((x) => x.id !== id); save(); rerender(); toast("Registro eliminado."); },
